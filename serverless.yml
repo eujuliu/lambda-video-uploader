@@ -1,0 +1,17 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: juliomartins
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: upload-file-s3
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+
+plugins:
+  - serverless-offline
+
+functions:
+  api:
+    handler: ./src/handlers/api.http
+    events:
+      - httpApi: '*'

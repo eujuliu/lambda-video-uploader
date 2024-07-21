@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Upload File</title>
+
+		<style>
+			:root {
+				font-size: 62.5%;
+			}
+
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+			}
+
+			html,
+			body {
+				height: 100%;
+			}
+
+			body {
+				font: 500 16px/1.5 'Inter', sans-serif;
+			}
+
+			.content {
+				display: flex;
+				gap: 20px;
+				padding: 40px;
+			}
+
+			.upload-file {
+				background-color: #f1f1f1;
+				padding: 20px;
+				max-width: fit-content;
+			}
+
+			.upload-file .drag-file {
+				position: relative;
+				width: 400px;
+				height: 400px;
+				border: 1px dashed #757575;
+				cursor: pointer;
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+
+			.upload-file .drag-file .drag-file-text {
+				font-size: 2.6rem;
+				color: coral;
+			}
+
+			.upload-file .drag-file input {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				opacity: 0;
+				cursor: pointer;
+			}
+
+			.files-wrapper {
+				width: 470px;
+			}
+
+			.files-wrapper .files {
+				display: flex;
+				align-items: center;
+				justify-content: flex-start;
+				flex-direction: column;
+				max-width: fit-content;
+				padding: 0 10px;
+				gap: 10px;
+				max-height: 356px;
+				overflow-y: auto;
+			}
+
+			.files-wrapper .files .file {
+				display: flex;
+				justify-content: space-between;
+				gap: 20px;
+				padding: 20px;
+				width: 100%;
+				background-color: #f0f0f0;
+			}
+
+			.files-wrapper .files .file .name,
+			.files-wrapper .files .file .size {
+				color: #5a5a5a;
+			}
+
+			.files-wrapper .files .file button {
+				background-color: none;
+				border: 0;
+				cursor: pointer;
+			}
+
+			.files-wrapper > button {
+				width: 100%;
+				background-color: coral;
+				border: 0;
+				border-radius: 10px;
+				padding: 20px 30px;
+				font-size: 1.6rem;
+				margin-top: 10px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="content">
+			<div class="upload-file">
+				<div
+					class="drag-file"
+					ondrop="newFile(event.dataTransfer.files)"
+					ondragover="event.preventDefault()"
+				>
+					<div class="drag-file-text">Drop your video here!</div>
+					<input
+						type="file"
+						class="inputFile"
+						accept="video/*"
+						oninput="newFile(event.target.files)"
+					/>
+				</div>
+			</div>
+
+			<div class="files-wrapper">
+				<div id="files" class="files"></div>
+				<button onclick="upload()">Upload</button>
+			</div>
+		</div>
+
+		<script>
+			let files = [];
+
+			function upload() {
+				const formData = new FormData();
+
+				files.forEach((file, index) => {
+					formData.append('files[]', file);
+				});
+
+				fetch('http://localhost:3000/api/upload', {
+					body: formData,
+					method: 'POST',
+				})
+					.then((response) => response.json())
+					.then((data) => {
+						files = [];
+						setFilesOnScreen();
+
+						console.log(data);
+					})
+					.catch((e) => {
+						console.error(e);
+					});
+			}
+
+			function newFile(items) {
+				event.preventDefault();
+				files.push(...items);
+
+				setFilesOnScreen();
+				event.target.value = '';
+			}
+
+			function setFilesOnScreen() {
+				const div = document.querySelector('#files');
+				div.innerHTML = '';
+
+				files.forEach((file, index) => {
+					const main = createElement('div', {
+						className: 'file',
+						innerHTML: `
+			           <svg
+			             xmlns="http://www.w3.org/2000/svg"
+			             width="60"
+			             height="60"
+			             viewBox="0 0 24 24"
+			             style="fill: rgba(0, 0, 0, 1)"
+			           >
+			             <path
+			               d="M19.937 8.68c-.011-.032-.02-.063-.033-.094a.997.997 0 0 0-.196-.293l-6-6a.997.997 0 0 0-.293-.196c-.03-.014-.062-.022-.094-.033a.991.991 0 0 0-.259-.051C13.04 2.011 13.021 2 13 2H6c-1.103 0-2 .897-2 2v16c0 1.103.897 2 2 2h12c1.103 0 2-.897 2-2V9c0-.021-.011-.04-.013-.062a.99.99 0 0 0-.05-.258zM16.586 8H14V5.414L16.586 8zM6 20V4h6v5a1 1 0 0 0 1 1h5l.002 10H6z"
+			             ></path>
+			           </svg>
+			         `,
+					});
+					const details = createElement('div', {
+						className: 'details',
+						innerHTML: `
+			           <div class="details">
+			             <div class="name">${file.name}</div>
+			             <div class="size">${calcFileSize(file.size)}</div>
+			           </div>
+			         `,
+					});
+
+					const closeButton = createElement('button', {
+						innerHTML: `
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="48"
+                height="48"
+                viewBox="0 0 24 24"
+                style="fill: rgba(0, 0, 0, 1)"
+              >
+                <path
+                  d="m16.192 6.344-4.243 4.242-4.242-4.242-1.414 1.414L10.535 12l-4.242 4.242 1.414 1.414 4.242-4.242 4.243 4.242 1.414-1.414L13.364 12l4.242-4.242z"
+                ></path>
+              </svg>
+            `,
+						onclick() {
+							event.target.closest('.file').remove();
+							files.splice(index);
+						},
+					});
+
+					main.append(details, closeButton);
+					div.append(main);
+				});
+			}
+
+			function calcFileSize(bytes) {
+				if (bytes === 0) return '0 Bytes';
+				const k = 1024;
+				const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+				const i = Math.floor(Math.log(bytes) / Math.log(k));
+				return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+			}
+
+			function createElement(name, props) {
+				return Object.assign(document.createElement(name), props);
+			}
+		</script>
+	</body>
+</html>
